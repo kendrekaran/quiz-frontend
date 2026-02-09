@@ -56,7 +56,9 @@ export default function Login() {
 
     if (!res.ok) {
       setLoading(false);
-      const msg = getFriendlyErrorMessage(body.message || body.error || "Sign in failed. Check your email and password.");
+      // Show backend error message directly if available
+      const backendError = body.message || body.error;
+      const msg = backendError || "Sign in failed. Check your email and password.";
       setError(msg);
       toast.error(msg);
       return;
@@ -97,18 +99,18 @@ export default function Login() {
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 pt-8 md:px-10">
         <header className="flex items-center justify-between">
-          <Link
-            to="/"
+          <a
+            href="/"
             className="display-font text-2xl tracking-wide text-foreground transition-colors hover:text-primary"
           >
             QUIZLAB
-          </Link>
-          <Link
-            to="/"
+          </a>
+          <a
+            href="/"
             className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-primary"
           >
             ← Back to home
-          </Link>
+          </a>
         </header>
 
         <div className="flex flex-1 flex-col items-center justify-center py-12">
@@ -130,7 +132,7 @@ export default function Login() {
                 {error && (
                   <div
                     role="alert"
-                    className="rounded-xl border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+                    className="rounded-xl border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm text-red-400"
                   >
                     {error}
                   </div>

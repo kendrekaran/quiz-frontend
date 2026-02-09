@@ -62,11 +62,17 @@ export async function apiRequest(path, options = {}) {
     };
   }
 
-  let data;
-  try {
-    data = await res.json().catch(() => ({}));
-  } catch {
-    data = {};
+  let data = {};
+  // Don't try to parse JSON for 204 No Content responses
+  if (res.status !== 204) {
+    try {
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json().catch(() => ({}));
+      }
+    } catch {
+      data = {};
+    }
   }
 
   const rawError = data.message ?? data.error;
@@ -139,4 +145,47 @@ export async function createStudent(payload) {
     return { student: null, error: result.message || result.error };
   }
   return { student: result.data, error: null };
+}
+
+/**
+ * Delete a student by id.
+ * Returns { error } (null if successful).
+ */
+export async function deleteStudent(id) {
+  const result = await apiRequest(`/api/students/${id}`, {
+    method: "DELETE",
+  });
+  if (!result.ok) {
+    return { error: result.message || result.error };
+  }
+  return { error: null };
+}
+
+/**
+ * Update a quiz by id. Payload: { name?, description?, class?, topic?, questions? }.
+ * Returns { quiz, error }.
+ */
+export async function updateQuiz(id, payload) {
+  const result = await apiRequest(`/api/quizzes/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+  if (!result.ok) {
+    return { quiz: null, error: result.message || result.error };
+  }
+  return { quiz: result.data, error: null };
+}
+
+/**
+ * Delete a quiz by id.
+ * Returns { error } (null if successful).
+ */
+export async function deleteQuiz(id) {
+  const result = await apiRequest(`/api/quizzes/${id}`, {
+    method: "DELETE",
+  });
+  if (!result.ok) {
+    return { error: result.message || result.error };
+  }
+  return { error: null };
 }

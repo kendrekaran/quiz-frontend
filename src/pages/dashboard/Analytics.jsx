@@ -2,16 +2,16 @@ import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import { getQuizzes, getStudents } from "../../lib/api.js";
 import LoadingScreen from "../../components/LoadingScreen.jsx";
-import { DefaultBarChart } from "../../components/ui/default-bar-chart";
-import { StudentsLineChart } from "../../components/ui/students-line-chart";
+// import { DefaultBarChart } from "../../components/ui/default-bar-chart";
+// import { StudentsLineChart } from "../../components/ui/students-line-chart";
 
 export default function Analytics() {
   const [quizzes, setQuizzes] = useState([]);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [quizChartView, setQuizChartView] = useState("days");
-  const [studentChartView, setStudentChartView] = useState("days");
+  // const [quizChartView, setQuizChartView] = useState("days");
+  // const [studentChartView, setStudentChartView] = useState("days");
 
   useEffect(() => {
     let cancelled = false;
@@ -57,105 +57,105 @@ export default function Analytics() {
     };
   }, [quizzes, students]);
 
-  const quizzesByDay = useMemo(() => {
-    const now = new Date();
-    const days = 7;
-    const byDay = new Map();
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      d.setHours(0, 0, 0, 0);
-      const key = d.toISOString().slice(0, 10);
-      byDay.set(key, {
-        label: d.toLocaleDateString("en-US", { day: "numeric", month: "short" }),
-        quizzes: 0,
-      });
-    }
-    quizzes.forEach((q) => {
-      const created = q.created_at;
-      if (!created) return;
-      const d = new Date(created);
-      d.setHours(0, 0, 0, 0);
-      const key = d.toISOString().slice(0, 10);
-      if (byDay.has(key)) {
-        byDay.get(key).quizzes += 1;
-      }
-    });
-    return Array.from(byDay.values());
-  }, [quizzes]);
+  // const quizzesByDay = useMemo(() => {
+  //   const now = new Date();
+  //   const days = 7;
+  //   const byDay = new Map();
+  //   for (let i = days - 1; i >= 0; i--) {
+  //     const d = new Date(now);
+  //     d.setDate(d.getDate() - i);
+  //     d.setHours(0, 0, 0, 0);
+  //     const key = d.toISOString().slice(0, 10);
+  //     byDay.set(key, {
+  //       label: d.toLocaleDateString("en-US", { day: "numeric", month: "short" }),
+  //       quizzes: 0,
+  //     });
+  //   }
+  //   quizzes.forEach((q) => {
+  //     const created = q.created_at;
+  //     if (!created) return;
+  //     const d = new Date(created);
+  //     d.setHours(0, 0, 0, 0);
+  //     const key = d.toISOString().slice(0, 10);
+  //     if (byDay.has(key)) {
+  //       byDay.get(key).quizzes += 1;
+  //     }
+  //   });
+  //   return Array.from(byDay.values());
+  // }, [quizzes]);
 
-  const quizzesOverTime = useMemo(() => {
-    const now = new Date();
-    const byMonth = new Map();
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      byMonth.set(key, {
-        label: d.toLocaleDateString("en-US", { month: "short" }),
-        quizzes: 0,
-      });
-    }
-    quizzes.forEach((q) => {
-      const created = q.created_at;
-      if (!created) return;
-      const d = new Date(created);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      if (byMonth.has(key)) {
-        byMonth.get(key).quizzes += 1;
-      }
-    });
-    return Array.from(byMonth.values());
-  }, [quizzes]);
+  // const quizzesOverTime = useMemo(() => {
+  //   const now = new Date();
+  //   const byMonth = new Map();
+  //   for (let i = 5; i >= 0; i--) {
+  //     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+  //     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  //     byMonth.set(key, {
+  //       label: d.toLocaleDateString("en-US", { month: "short" }),
+  //       quizzes: 0,
+  //     });
+  //   }
+  //   quizzes.forEach((q) => {
+  //     const created = q.created_at;
+  //     if (!created) return;
+  //     const d = new Date(created);
+  //     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  //     if (byMonth.has(key)) {
+  //       byMonth.get(key).quizzes += 1;
+  //     }
+  //   });
+  //   return Array.from(byMonth.values());
+  // }, [quizzes]);
 
-  const studentsByDay = useMemo(() => {
-    const now = new Date();
-    const days = 7;
-    const byDay = new Map();
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      d.setHours(0, 0, 0, 0);
-      const key = d.toISOString().slice(0, 10);
-      byDay.set(key, {
-        label: d.toLocaleDateString("en-US", { day: "numeric", month: "short" }),
-        students: 0,
-      });
-    }
-    students.forEach((s) => {
-      const created = s.created_at;
-      if (!created) return;
-      const d = new Date(created);
-      d.setHours(0, 0, 0, 0);
-      const key = d.toISOString().slice(0, 10);
-      if (byDay.has(key)) {
-        byDay.get(key).students += 1;
-      }
-    });
-    return Array.from(byDay.values());
-  }, [students]);
+  // const studentsByDay = useMemo(() => {
+  //   const now = new Date();
+  //   const days = 7;
+  //   const byDay = new Map();
+  //   for (let i = days - 1; i >= 0; i--) {
+  //     const d = new Date(now);
+  //     d.setDate(d.getDate() - i);
+  //     d.setHours(0, 0, 0, 0);
+  //     const key = d.toISOString().slice(0, 10);
+  //     byDay.set(key, {
+  //       label: d.toLocaleDateString("en-US", { day: "numeric", month: "short" }),
+  //       students: 0,
+  //     });
+  //   }
+  //   students.forEach((s) => {
+  //     const created = s.created_at;
+  //     if (!created) return;
+  //     const d = new Date(created);
+  //     d.setHours(0, 0, 0, 0);
+  //     const key = d.toISOString().slice(0, 10);
+  //     if (byDay.has(key)) {
+  //       byDay.get(key).students += 1;
+  //     }
+  //   });
+  //   return Array.from(byDay.values());
+  // }, [students]);
 
-  const studentsOverTime = useMemo(() => {
-    const now = new Date();
-    const byMonth = new Map();
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      byMonth.set(key, {
-        label: d.toLocaleDateString("en-US", { month: "short" }),
-        students: 0,
-      });
-    }
-    students.forEach((s) => {
-      const created = s.created_at;
-      if (!created) return;
-      const d = new Date(created);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      if (byMonth.has(key)) {
-        byMonth.get(key).students += 1;
-      }
-    });
-    return Array.from(byMonth.values());
-  }, [students]);
+  // const studentsOverTime = useMemo(() => {
+  //   const now = new Date();
+  //   const byMonth = new Map();
+  //   for (let i = 5; i >= 0; i--) {
+  //     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+  //     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  //     byMonth.set(key, {
+  //       label: d.toLocaleDateString("en-US", { month: "short" }),
+  //       students: 0,
+  //     });
+  //   }
+  //   students.forEach((s) => {
+  //     const created = s.created_at;
+  //     if (!created) return;
+  //     const d = new Date(created);
+  //     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  //     if (byMonth.has(key)) {
+  //       byMonth.get(key).students += 1;
+  //     }
+  //   });
+  //   return Array.from(byMonth.values());
+  // }, [students]);
 
   if (loading) {
     return <LoadingScreen variant="block" message="Loading analytics…" />;
@@ -174,7 +174,7 @@ export default function Analytics() {
 
       {error && (
         <div
-          className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+          className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400"
           role="alert"
         >
           {error}
@@ -208,7 +208,7 @@ export default function Analytics() {
         </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-2">
+      {/* <div className="grid gap-8 lg:grid-cols-2">
         <DefaultBarChart
           data={quizChartView === "days" ? quizzesByDay : quizzesOverTime}
           totalQuizzes={stats.totalQuizzes}
@@ -225,7 +225,7 @@ export default function Analytics() {
           viewMode={studentChartView}
           onViewModeChange={setStudentChartView}
         />
-      </div>
+      </div> */}
     </div>
   );
 }

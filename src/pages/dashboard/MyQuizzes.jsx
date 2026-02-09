@@ -2,12 +2,17 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import LoadingScreen from "../../components/LoadingScreen.jsx";
-import { getQuizzes } from "../../lib/api";
+import AlertDialog from "../../components/AlertDialog.jsx";
+import { useAlert } from "../../hooks/useAlert.js";
+import { getQuizzes, deleteQuiz } from "../../lib/api";
+import { Trash2 } from "lucide-react";
 
 export default function MyQuizzes() {
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const { alert, showAlert } = useAlert();
 
   useEffect(() => {
     let cancelled = false;
@@ -23,8 +28,34 @@ export default function MyQuizzes() {
     return () => { cancelled = true; };
   }, []);
 
+  const handleDelete = (id, name, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    showAlert({
+      title: "Delete Quiz?",
+      message: `Are you sure you want to delete "${name || "this quiz"}"? This action cannot be undone.`,
+      variant: "destructive",
+      confirmText: "Delete",
+      onConfirm: async () => {
+        setDeletingId(id);
+        const { error: err } = await deleteQuiz(id);
+        setDeletingId(null);
+
+        if (err) {
+          toast.error(err);
+          return;
+        }
+
+        toast.success("Quiz deleted successfully");
+        setQuizzes((prev) => prev.filter((q) => q.id !== id));
+      },
+    });
+  };
+
   return (
     <div>
+      <AlertDialog {...alert} />
       <h1 className="display-font text-2xl text-foreground md:text-3xl">
         My Quizzes
       </h1>
@@ -62,7 +93,7 @@ export default function MyQuizzes() {
       {!loading && !error && quizzes.length > 0 && (
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {quizzes.map((quiz) => (
-            <li key={quiz.id}>
+            <li key={quiz.id} className="relative">
               <Link
                 to={`/dashboard/my-quizzes/${quiz.id}`}
                 className="block rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30 hover:bg-card/80"
@@ -79,6 +110,14 @@ export default function MyQuizzes() {
                   {quiz.questions?.length ?? 0} questions
                 </p>
               </Link>
+              <button
+                onClick={(e) => handleDelete(quiz.id, quiz.name, e)}
+                disabled={deletingId === quiz.id}
+                className="absolute cursor-pointer right-3 top-3 rounded p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label={`Delete ${quiz.name || "quiz"}`}
+              >
+                <Trash2 className="size-4" />
+              </button>
             </li>
           ))}
         </ul>
