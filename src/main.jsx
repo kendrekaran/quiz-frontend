@@ -6,6 +6,7 @@ import App from "./App.jsx";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import StudentProtectedRoute from "./components/StudentProtectedRoute.jsx";
 import { getSession } from "./lib/api.js";
 import DashboardHome from "./pages/dashboard/DashboardHome.jsx";
 import Analytics from "./pages/dashboard/Analytics.jsx";
@@ -16,6 +17,11 @@ import QuestionBank from "./pages/dashboard/QuestionBank.jsx";
 import CreateStudent from "./pages/dashboard/CreateStudent.jsx";
 import StudentTable from "./pages/dashboard/StudentTable.jsx";
 import Settings from "./pages/dashboard/Settings.jsx";
+import Reports from "./pages/dashboard/Reports.jsx";
+import SetupPassword from "./pages/student/SetupPassword.jsx";
+import StudentDashboard from "./pages/student/StudentDashboard.jsx";
+import QuizAttempt from "./pages/student/QuizAttempt.jsx";
+import QuizResult from "./pages/student/QuizResult.jsx";
 import "./index.css";
 
 createRoot(document.getElementById("root")).render(
@@ -57,8 +63,35 @@ createRoot(document.getElementById("root")).render(
         <Route path="question-bank" element={<QuestionBank />} />
         <Route path="create-student" element={<CreateStudent />} />
         <Route path="students" element={<StudentTable />} />
+        <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
       </Route>
+      {/* Student routes */}
+      <Route path="/student/setup-password" element={<SetupPassword />} />
+      <Route
+        path="/student/dashboard"
+        element={
+          <StudentProtectedRoute>
+            <StudentDashboard />
+          </StudentProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/quiz/:quizId/attempt"
+        element={
+          <StudentProtectedRoute>
+            <QuizAttempt />
+          </StudentProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/quiz/:quizId/result"
+        element={
+          <StudentProtectedRoute>
+            <QuizResult />
+          </StudentProtectedRoute>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
