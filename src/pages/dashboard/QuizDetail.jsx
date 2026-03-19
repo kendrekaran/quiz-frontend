@@ -13,7 +13,7 @@ export default function QuizDetail() {
   const [error, setError] = useState(null);
   const [editingQuiz, setEditingQuiz] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState(null);
-  const [quizForm, setQuizForm] = useState({ name: "", description: "", class: "", topic: "" });
+  const [quizForm, setQuizForm] = useState({ name: "", description: "", class: "", topic: "", time_limit: "" });
   const [questionForm, setQuestionForm] = useState({ text: "", marks: 1, options: [] });
   const [saving, setSaving] = useState(false);
 
@@ -45,6 +45,7 @@ export default function QuizDetail() {
         description: quiz.description || "",
         class: quiz.class || "",
         topic: quiz.topic || "",
+        time_limit: quiz.time_limit ? String(quiz.time_limit) : "",
       });
     }
   }, [quiz, editingQuiz]);
@@ -68,12 +69,14 @@ export default function QuizDetail() {
       return;
     }
 
+    const parsedTimeLimit = parseInt(quizForm.time_limit, 10);
     setSaving(true);
     const { quiz: updated, error: err } = await updateQuiz(quizId, {
       name: quizForm.name.trim(),
       description: quizForm.description.trim() || null,
       class: quizForm.class.trim() || null,
       topic: quizForm.topic.trim() || null,
+      time_limit: Number.isFinite(parsedTimeLimit) && parsedTimeLimit > 0 ? parsedTimeLimit : null,
     });
     setSaving(false);
 
@@ -215,6 +218,17 @@ export default function QuizDetail() {
                     className="flex-1 rounded-xl border border-border bg-background px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min="1"
+                    value={quizForm.time_limit}
+                    onChange={(e) => setQuizForm({ ...quizForm, time_limit: e.target.value })}
+                    placeholder="No limit"
+                    className="w-32 rounded-xl border border-border bg-background px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <span className="text-xs text-muted-foreground">minutes (leave empty for no time limit)</span>
+                </div>
                 <div className="flex gap-2">
                   <button
                     onClick={handleSaveQuiz}
@@ -227,7 +241,7 @@ export default function QuizDetail() {
                   <button
                     onClick={() => {
                       setEditingQuiz(false);
-                      setQuizForm({ name: "", description: "", class: "", topic: "" });
+                      setQuizForm({ name: "", description: "", class: "", topic: "", time_limit: "" });
                     }}
                     disabled={saving}
                     className="flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground hover:bg-accent disabled:opacity-50"
@@ -256,6 +270,9 @@ export default function QuizDetail() {
                       Topic: {quiz.topic}
                     </span>
                   )}
+                  <span className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-500">
+                    {quiz.time_limit ? `${quiz.time_limit} min` : "No time limit"}
+                  </span>
                 </div>
               </>
             )}

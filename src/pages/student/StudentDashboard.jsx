@@ -131,9 +131,12 @@ export default function StudentDashboard() {
     }
 
     // Show confirmation dialog before starting
+    const timeLimitMsg = quiz.time_limit
+      ? ` You will have ${quiz.time_limit} minute${quiz.time_limit === 1 ? "" : "s"} to complete it, and the quiz will be auto-submitted when time runs out.`
+      : "";
     showAlert({
       title: "Start quiz?",
-      message: `You are about to start "${quiz.name || "this quiz"}". Once you start, the quiz will open in full screen mode. You can only attempt this quiz once. Are you sure you want to begin?`,
+      message: `You are about to start "${quiz.name || "this quiz"}". Once you start, the quiz will open in full screen mode. You can only attempt this quiz once.${timeLimitMsg} Are you sure you want to begin?`,
       confirmText: "Start quiz",
       cancelText: "Cancel",
       variant: "default",
@@ -331,7 +334,17 @@ export default function StudentDashboard() {
 
                       <div className="mt-5 flex items-center justify-between gap-3 text-xs text-muted-foreground">
                         <span>{quiz.class?.trim() || "All classes"}</span>
-                        <span>{questionCount} questions</span>
+                        <div className="flex items-center gap-2">
+                          {quiz.time_limit && (
+                            <span className="flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-500">
+                              <svg className="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              {quiz.time_limit} min
+                            </span>
+                          )}
+                          <span>{questionCount} questions</span>
+                        </div>
                       </div>
 
                       {isAttempted ? (

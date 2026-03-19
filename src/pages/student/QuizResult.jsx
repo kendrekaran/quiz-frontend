@@ -19,6 +19,20 @@ function formatDate(value) {
   }).format(date);
 }
 
+function formatDuration(startedAt, submittedAt) {
+  if (!startedAt || !submittedAt) return null;
+  const start = new Date(startedAt).getTime();
+  const end = new Date(submittedAt).getTime();
+  if (Number.isNaN(start) || Number.isNaN(end)) return null;
+  const diffSeconds = Math.max(0, Math.round((end - start) / 1000));
+  const hrs = Math.floor(diffSeconds / 3600);
+  const mins = Math.floor((diffSeconds % 3600) / 60);
+  const secs = diffSeconds % 60;
+  if (hrs > 0) return `${hrs}h ${mins}m ${secs}s`;
+  if (mins > 0) return `${mins}m ${secs}s`;
+  return `${secs}s`;
+}
+
 function getGradeColor(percentage) {
   if (percentage >= 80) return "text-green-400";
   if (percentage >= 60) return "text-primary";
@@ -179,6 +193,25 @@ export default function QuizResult() {
               <p className="mt-2 text-xl font-bold text-amber-400">{skippedCount}</p>
             </div>
           </div>
+
+          {/* Time info row */}
+          {(formatDuration(result.started_at, result.submitted_at) || result.time_limit) && (
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
+              {formatDuration(result.started_at, result.submitted_at) && (
+                <div className="flex items-center gap-1.5 rounded-xl border border-border bg-background/60 px-4 py-2.5">
+                  <svg className="size-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm font-semibold text-foreground">
+                    Time taken: {formatDuration(result.started_at, result.submitted_at)}
+                  </span>
+                  {result.time_limit && (
+                    <span className="text-xs text-muted-foreground">/ {result.time_limit} min</span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {result.submitted_at && (
             <p className="mt-6 text-xs text-muted-foreground">

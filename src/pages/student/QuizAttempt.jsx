@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { getStudentQuizById, submitQuizAttempt } from "../../lib/api.js";
@@ -6,6 +6,18 @@ import AlertDialog from "../../components/AlertDialog.jsx";
 
 function getOptionLetter(index) {
   return String.fromCharCode(65 + (index % 26));
+}
+
+/**
+ * Format seconds into MM:SS or HH:MM:SS.
+ */
+function formatTime(totalSeconds) {
+  if (totalSeconds <= 0) return "00:00";
+  const hrs = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+  const pad = (n) => String(n).padStart(2, "0");
+  return hrs > 0 ? `${pad(hrs)}:${pad(mins)}:${pad(secs)}` : `${pad(mins)}:${pad(secs)}`;
 }
 
 export default function QuizAttempt() {
@@ -19,7 +31,10 @@ export default function QuizAttempt() {
   const [submitting, setSubmitting] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [showTimeUpDialog, setShowTimeUpDialog] = useState(false);
+  const [remainingSeconds, setRemainingSeconds] = useState(null); // null = no timer
   const startedAtRef = useRef(new Date().toISOString());
+  const autoSubmitTriggeredRef = useRef(false);
 
   // Request fullscreen on mount
   useEffect(() => {
@@ -79,6 +94,86 @@ export default function QuizAttempt() {
     }
     loadQuiz();
   }, [quizId, navigate]);
+
+  // Initialize and run the countdown timer when quiz has a time_limit
+  useEffect(() => {
+    if (!quiz?.time_limit) {
+      setRemainingSeconds(null);
+      return;
+    }
+
+    const timeLimitMs = quiz.time_limit * 60 * 1000;
+    const startTime = new Date(startedAtRef.current).getTime();
+
+    function tick() {
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, Math.ceil((timeLimitMs - elapsed) / 1000));
+      setRemainingSeconds(remaining);
+      return remaining;
+    }
+
+    // Set initial value
+    tick();
+
+    const intervalId = setInterval(() => {
+      const remaining = tick();
+      if (remaining <= 0) {
+        clearInterval(intervalId);
+      }
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [quiz?.time_limit]);
+
+  // Auto-submit when timer reaches zero
+  const handleAutoSubmit = useCallback(async () => {
+    if (autoSubmitTriggeredRef.current || submitting) return;
+    autoSubmitTriggeredRef.current = true;
+
+    setShowSubmitConfirm(false);
+    setShowExitConfirm(false);
+    setShowTimeUpDialog(true);
+
+    // Small delay so the student sees the "time's up" message
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    setSubmitting(true);
+    const formattedAnswers = (Array.isArray(quiz?.questions) ? quiz.questions : []).map((q) => ({
+      question_id: q.id,
+      selected_option_id: answers[q.id] ?? null,
+    }));
+
+    const { result, error: submitError, already_attempted } = await submitQuizAttempt(quizId, {
+      answers: formattedAnswers,
+      started_at: startedAtRef.current,
+    });
+
+    setSubmitting(false);
+    setShowTimeUpDialog(false);
+
+    if (already_attempted) {
+      toast.error("You have already submitted this quiz.");
+      navigate(`/student/quiz/${quizId}/result`, { replace: true });
+      return;
+    }
+
+    if (submitError) {
+      toast.error(submitError);
+      return;
+    }
+
+    toast.info("Time is up! Your quiz has been auto-submitted.");
+    navigate(`/student/quiz/${quizId}/result`, {
+      replace: true,
+      state: { result },
+    });
+  }, [quiz, answers, quizId, navigate, submitting]);
+
+  useEffect(() => {
+    if (remainingSeconds === 0 && quiz?.time_limit && !autoSubmitTriggeredRef.current) {
+      handleAutoSubmit();
+    }
+  }, [remainingSeconds, quiz?.time_limit, handleAutoSubmit]);
 
   const questions = useMemo(() => {
     return Array.isArray(quiz?.questions) ? quiz.questions : [];
@@ -183,10 +278,29 @@ export default function QuizAttempt() {
             </h1>
             <p className="text-xs text-muted-foreground">
               {quiz?.topic || "General"} &middot; {questions.length} questions &middot; {totalMarks} marks
+              {quiz?.time_limit ? ` \u00b7 ${quiz.time_limit} min` : ""}
             </p>
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Countdown timer */}
+            {remainingSeconds != null && (
+              <div
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-bold tabular-nums transition-colors ${
+                  remainingSeconds <= 60
+                    ? "animate-pulse border-destructive/50 bg-destructive/10 text-destructive"
+                    : remainingSeconds <= 300
+                      ? "border-amber-500/50 bg-amber-500/10 text-amber-500"
+                      : "border-primary/50 bg-primary/10 text-primary"
+                }`}
+              >
+                <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {formatTime(remainingSeconds)}
+              </div>
+            )}
+
             <div className="hidden text-right text-xs text-muted-foreground sm:block">
               <p>
                 <span className="font-semibold text-primary">{answeredCount}</span> / {questions.length} answered
@@ -343,6 +457,18 @@ export default function QuizAttempt() {
         variant="destructive"
         onConfirm={confirmExit}
         onCancel={() => setShowExitConfirm(false)}
+      />
+
+      {/* Time's up auto-submit dialog */}
+      <AlertDialog
+        open={showTimeUpDialog}
+        title="Time's up!"
+        message="The time limit has expired. Your answers are being submitted automatically..."
+        confirmText=""
+        cancelText=""
+        variant="destructive"
+        onConfirm={() => {}}
+        onCancel={() => {}}
       />
     </div>
   );

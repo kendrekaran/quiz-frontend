@@ -10,6 +10,7 @@ const DEFAULT_QUIZ = {
   description: "",
   class: "",
   topic: "",
+  time_limit: "",
 };
 
 function cloneQuestionFromBank(question) {
@@ -131,11 +132,13 @@ export default function CreateQuiz() {
   async function handleCreate() {
     setCreateError(null);
     setCreating(true);
+    const parsedTimeLimit = parseInt(quizMeta.time_limit, 10);
     const { quiz, error } = await createQuizApi({
       name: quizMeta.name.trim(),
       description: quizMeta.description.trim() || undefined,
       class: quizMeta.class.trim() || undefined,
       topic: quizMeta.topic.trim() || undefined,
+      time_limit: Number.isFinite(parsedTimeLimit) && parsedTimeLimit > 0 ? parsedTimeLimit : null,
       questions,
     });
     setCreating(false);
@@ -222,6 +225,22 @@ export default function CreateQuiz() {
                   placeholder="e.g. Physics, Algebra"
                   className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
                 />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Time limit (minutes)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={quizMeta.time_limit}
+                  onChange={(e) => handleMetaChange("time_limit", e.target.value)}
+                  placeholder="No time limit"
+                  className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                />
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Leave empty for no time limit. Students will see a countdown timer during the quiz.
+                </p>
               </div>
             </div>
 
